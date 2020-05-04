@@ -467,7 +467,7 @@ bool mgos_modbus_connect() {
   return true;
 }
 
-bool mgos_modbus_init(void) {
+bool mgos_mongoose_os_modbus_init(void) {
   LOG(LL_DEBUG, ("Initializing modbus"));
   if (!mgos_sys_config_get_modbus_enable())
     return true;
