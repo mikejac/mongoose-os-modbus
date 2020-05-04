@@ -178,6 +178,9 @@ bool mb_read_write_multiple_registers(uint8_t slave_id, uint16_t read_address, u
 bool mb_mask_write_register(uint8_t slave_id, uint16_t address, uint16_t andMask, uint16_t orMask,
                             mb_response_callback cb, void* cb_arg);
 
+/* Return true if transaction is in progress (and new transaction cannot be started). */
+bool mb_get_state(void);
+
 #ifdef __cplusplus
 }
 #endif

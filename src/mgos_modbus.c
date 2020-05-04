@@ -33,6 +33,7 @@ struct mgos_modbus {
   uint8_t func_code_u8;
   uint8_t resp_status_u8;
   uint8_t resp_bytes_u8;
+  int flush_delay;
   char state; //0: Waiting for response, 1: Idle
 };
 
@@ -44,7 +45,7 @@ static void print_buffer(struct mbuf buffer) {
 
   char str[512];
   int length = 0;
-  for (int i = 0; i < buffer.len && length < sizeof(str) + 4; i++) {
+  for (int i = 0; i < buffer.len && length < sizeof(str) - 4; i++) {
     length += sprintf(str + length, "%.2x ", buffer.buf[i]);
   }
   LOG(LL_DEBUG, ("SlaveID: %.2x, Function: %.2x - Buffer: %.*s", s_modbus->slave_id_u8, s_modbus->func_code_u8, length, str));
@@ -282,7 +283,7 @@ static bool start_transaction() {
     s_modbus->state = 0;
     mgos_uart_set_rx_enabled(s_modbus->uart_no, false);
     mgos_uart_flush(s_modbus->uart_no);
-    mgos_msleep(30); //TODO delay for 3.5 Characters length according to baud rate
+    mgos_msleep(s_modbus->flush_delay);
     req_timer = mgos_set_timer(mgos_sys_config_get_modbus_timeout(), 0, req_timeout_cb, NULL);
     mgos_uart_write(s_modbus->uart_no, s_modbus->transmit_buffer.buf, s_modbus->transmit_buffer.len);
     mgos_uart_set_dispatcher(s_modbus->uart_no, uart_cb, &req_timer);
@@ -408,6 +409,10 @@ bool mb_mask_write_register(uint8_t slave_id, uint16_t address, uint16_t and_mas
   return start_transaction();
 }
 
+bool mb_get_state(void) {
+  return s_modbus->state == 0;
+}
+
 bool mgos_modbus_create(const struct mgos_config_modbus* cfg) {
   struct mgos_uart_config ucfg;
   mgos_uart_config_set_defaults(cfg->uart_no, &ucfg);
@@ -447,6 +452,33 @@ bool mgos_modbus_create(const struct mgos_config_modbus* cfg) {
     return false;
   mbuf_init(&s_modbus->transmit_buffer, 300);
   mbuf_init(&s_modbus->receive_buffer, 300);
+
+  float bits = 9; // 1 start bit + 8 data bits
+  switch (ucfg.parity) {
+    default:
+    case 0:
+      break;
+    case 1:
+    case 2:
+      bits += 1;
+      break;
+  }
+  switch (ucfg.stop_bits) {
+    default:
+    case 1:
+      bits += 1;
+      break;
+    case 2:
+      bits += 2;
+      break;
+    case 3:
+      bits += 1.5;
+      break;
+  }
+
+  float ms_per_bit = 1000.0 / (float) ucfg.baud_rate;
+  
+  s_modbus->flush_delay = 3.5 * bits * ms_per_bit; // delay for 3.5 Characters length according to baud rate
   s_modbus->state = 1;
   s_modbus->uart_no = cfg->uart_no;
 
