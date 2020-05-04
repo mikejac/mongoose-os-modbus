@@ -454,23 +454,6 @@ bool mgos_modbus_create(const struct mgos_config_modbus* cfg) {
   return true;
 }
 
-bool mgos_modbus_connect() {
-  struct mgos_config_modbus* cfg = &mgos_sys_config.modbus;
-  struct mgos_uart_config ucfg;
-  char b1[8], b2[8], b3[8];
-  LOG(LL_INFO, ("MODBUS UART%d (RX:%s TX:%s TX_EN:%s), Baudrate %d, Parity %d, Stop bits %d, Half Duplex %d, tx_en Value %d",
-                cfg->uart_no, mgos_gpio_str(ucfg.dev.rx_gpio, b1),
-                mgos_gpio_str(ucfg.dev.tx_gpio, b2),
-                mgos_gpio_str(ucfg.dev.tx_en_gpio, b3), ucfg.baud_rate,
-                ucfg.parity, ucfg.stop_bits, ucfg.dev.hd, ucfg.dev.tx_en_gpio_val));
-  mgos_uart_config_get(mgos_sys_config.modbus.uart_no, &ucfg);
-  if (!mgos_uart_configure(cfg->uart_no, &ucfg)) {
-    LOG(LL_ERROR, ("Failed to configure UART%d", cfg->uart_no));
-    return false;
-  }
-  return true;
-}
-
 bool mgos_mongoose_os_modbus_init(void) {
   LOG(LL_DEBUG, ("Initializing modbus"));
   if (!mgos_sys_config_get_modbus_enable())

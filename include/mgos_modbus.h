@@ -178,8 +178,6 @@ bool mb_read_write_multiple_registers(uint8_t slave_id, uint16_t read_address, u
 bool mb_mask_write_register(uint8_t slave_id, uint16_t address, uint16_t andMask, uint16_t orMask,
                             mb_response_callback cb, void* cb_arg);
 
-bool mgos_modbus_connect();
-
 #ifdef __cplusplus
 }
 #endif
