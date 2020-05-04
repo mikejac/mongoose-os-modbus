@@ -9,6 +9,8 @@
 #include "mgos_timers.h"
 #include "mgos_uart.h"
 
+#include "common/cs_dbg.h"
+
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define lowByte(w) ((uint8_t)((w)&0xff))
 #define highByte(w) ((uint8_t)((w) >> 8))
@@ -38,9 +40,11 @@ static struct mgos_modbus* s_modbus = NULL;
 static mgos_timer_id req_timer;
 
 static void print_buffer(struct mbuf buffer) {
+  if (cs_log_level < LL_DEBUG) return;
+
   char str[512];
   int length = 0;
-  for (int i = 0; i < buffer.len || i < sizeof(str); i++) {
+  for (int i = 0; i < buffer.len && length < sizeof(str) + 4; i++) {
     length += sprintf(str + length, "%.2x ", buffer.buf[i]);
   }
   LOG(LL_DEBUG, ("SlaveID: %.2x, Function: %.2x - Buffer: %.*s", s_modbus->slave_id_u8, s_modbus->func_code_u8, length, str));
